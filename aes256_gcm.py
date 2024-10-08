@@ -23,29 +23,3 @@ class Aes256GSM:
 
         return decrypted_data, "OK"
 
-
-# Генерация корневого ключа (256 бит) и мастер-ключа (256 бит)
-root_key = get_random_bytes(32)  # Корневой ключ длиной 256 бит (32 байта)
-master_key = get_random_bytes(32)  # Мастер-ключ длиной 256 бит (32 байта)
-
-print(f"Корневой ключ (Root Key): {root_key.hex()}")
-print(f"Мастер-ключ (Master Key): {master_key.hex()}")
-
-aes = Aes256GSM()
-# Шифруем мастер-ключ с помощью корневого ключа
-ciphertext, nonce, tag = aes.encrypt(root_key, master_key)
-
-print(f"Зашифрованный мастер-ключ (Ciphertext): {ciphertext.hex()}")
-print(f"Nonce: {nonce.hex()}")
-print(f"Tag: {tag.hex()}")
-
-# Расшифровываем мастер-ключ
-decrypted_master_key, _ = aes.decrypt(root_key, ciphertext, nonce, tag)
-
-print(f"Расшифрованный мастер-ключ (Decrypted Master Key): {decrypted_master_key.hex()}")
-
-# Проверяем, что расшифрованный мастер-ключ совпадает с исходным
-if decrypted_master_key == master_key:
-    print("Мастер-ключ успешно расшифрован!")
-else:
-    print("Ошибка: расшифрованный мастер-ключ не совпадает с исходным!")
