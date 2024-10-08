@@ -1,26 +1,82 @@
-from Crypto.Protocol.SecretSharing import Shamir
-from Crypto.Random import get_random_bytes
-from Crypto.Cipher import AES
+import random
+from functools import reduce
+from operator import mul
+import os
 
-root_key = get_random_bytes(16)
-print(root_key)
-cipher = AES.new(root_key, AES.MODE_GCM)
 
-key = get_random_bytes(16)
-protected_key = cipher.encrypt(key)
+# Простое умножение с модулем
+def mod_inverse(a, p):
+    """Нахождение обратного по модулю с использованием расширенного алгоритма Евклида"""
+    g, x, y = extended_gcd(a, p)
+    return x % p
 
-shares = Shamir.split(3, 5, root_key, False)
 
-recover_root_key = Shamir.combine(shares[:3], False)
-print(recover_root_key)
-recover_cipher = AES.new(recover_root_key, AES.MODE_GCM)
-recover_key = recover_cipher.decrypt(protected_key)
+def extended_gcd(a, b):
+    """Расширенный алгоритм Евклида"""
+    if a == 0:
+        return b, 0, 1
+    g, x1, y1 = extended_gcd(b % a, a)
+    x = y1 - (b // a) * x1
+    y = x1
+    return g, x, y
 
-print(key)
-print(recover_key)
-"""
-  1. Два созданных по одному ключу шифратора дают разные результаты.
-     Это может помешать восстановлению зашифрованного ключа шифрования в случае перезапуска скрипта, содержащем шифратор
-  2. Нужно модернизировать или реализовать самостоятельно Shamir,
-     так как в этом нет возможности использовать 32 байтный ключ шифрования AES256
-"""
+
+def eval_polynomial(coeffs, x, p):
+    """Вычисление значения полинома в точке x с модулем p"""
+    y = 0
+    for i, coeff in enumerate(coeffs):
+        y += coeff * (x ** i)
+    return y % p
+
+
+def lagrange_interpolation(x, x_s, y_s, p):
+    """Интерполяция Лагранжа для восстановления секрета"""
+
+    def _basis(j):
+        terms = [(x - x_s[m]) * mod_inverse(x_s[j] - x_s[m], p) % p for m in range(len(x_s)) if m != j]
+        return reduce(mul, terms, 1)
+
+    return sum(y_s[j] * _basis(j) for j in range(len(x_s))) % p
+
+
+def split_secret(secret, k, n, p):
+    """Разделение секрета с использованием схемы Шамира"""
+    coeffs = [secret] + [random.randint(0, p - 1) for _ in range(k - 1)]
+    shares = [(i, eval_polynomial(coeffs, i, p)) for i in range(1, n + 1)]
+    return shares
+
+
+def recover_secret(shares, p):
+    """Восстановление секрета с использованием интерполяции Лагранжа"""
+    x_s, y_s = zip(*shares)
+    return lagrange_interpolation(0, x_s, y_s, p)
+
+
+# Параметры схемы Шамира
+k = 3  # Минимальное количество частей для восстановления секрета
+n = 5  # Общее количество частей
+p = 2 ** 257 - 93  # Простое число, которое больше, чем 256-битное значение
+
+# Генерация 32-байтного ключа (256 бит)
+secret_key = int.from_bytes(os.urandom(32), byteorder='big')
+
+print(f"Секрет (ключ): {secret_key}")
+
+# Разделяем секрет на n частей с минимальным порогом k
+shares = split_secret(secret_key, k, n, p)
+
+print("\nЧасти секрета:")
+for i, share in enumerate(shares):
+    print(f"Часть {i + 1}: (x={share[0]}, y={share[1]})")
+
+# Восстановление секрета из первых k частей
+selected_shares = shares[:k]
+recovered_key = recover_secret(selected_shares, p)
+
+print(f"\nВосстановленный секрет (ключ): {recovered_key}")
+
+# Проверяем, совпадает ли восстановленный секрет с исходным
+if recovered_key == secret_key:
+    print("Секрет успешно восстановлен!")
+else:
+    print("Ошибка при восстановлении секрета!")
