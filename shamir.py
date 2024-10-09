@@ -14,6 +14,8 @@ class Shamir256:
         secret_int_parts = [(i, int.from_bytes(chunk, "big")) for i, chunk in enumerate(chunks)]
         return secret_int_parts
 
+    def __generate_coefficients(self, threshold: int) -> list[int]:
+        return [secrets.randbelow(self.high_value) for _ in range(threshold - 1)]
 
 def lagrange_interpolation(x, x_s, y_s, p):
     """Интерполяция Лагранжа для восстановления секрета"""
