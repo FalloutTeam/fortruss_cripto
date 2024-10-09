@@ -3,15 +3,15 @@ from Crypto.Cipher import AES
 
 class Aes256GSM:
     @staticmethod
-    def encrypt(key:bytes| bytearray | memoryview, data: any)\
+    def encrypt(key:bytes| bytearray | memoryview, data: bytes | bytearray | memoryview, nonce: bytes = None)\
             -> tuple[bytes, bytes| bytearray | memoryview, bytes]:
-        cipher = AES.new(key, AES.MODE_GCM)
+        cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
         encrypted_data, authorization_tag = cipher.encrypt_and_digest(data)
 
         return encrypted_data, cipher.nonce, authorization_tag
 
     @staticmethod
-    def decrypt(key: bytes| bytearray | memoryview, data: any, nonce: bytes| bytearray | memoryview, tag: bytes) \
+    def decrypt(key: bytes| bytearray | memoryview, data: bytes | bytearray | memoryview, nonce: bytes| bytearray | memoryview, tag: bytes) \
             -> tuple[bytes, str]:
         try:
             if type(key) is str:
