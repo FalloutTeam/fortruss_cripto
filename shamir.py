@@ -8,12 +8,11 @@ class Shamir256:
         self.divisor = divisor
         self.high_value = high_value
 
-def eval_polynomial(coeffs, x, p):
-    """Вычисление значения полинома в точке x с модулем p"""
-    y = 0
-    for i, coeff in enumerate(coeffs):
-        y += coeff * (x ** i)
-    return y % p
+    @staticmethod
+    def __bytes_to_ints(secret: bytes) -> list[tuple[int, int]]:
+        chunks = [secret[i: i+8] for i in range(0, len(secret), 8)]
+        secret_int_parts = [(i, int.from_bytes(chunk, "big")) for i, chunk in enumerate(chunks)]
+        return secret_int_parts
 
 
 def lagrange_interpolation(x, x_s, y_s, p):
