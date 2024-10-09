@@ -55,3 +55,27 @@ class Shamir256:
         secret_shares = list(enumerate(self.__encode_shares(points), start=1))
 
         return secret_shares
+
+    def __lagrange_interpolation(self, x: int, points: list[tuple[int, int]]) -> int:
+        total = 0
+        x_values, y_values = zip(*points)
+        n = len(x_values)
+
+        for i in range(n):
+            term = y_values[i]
+            for j in range(n):
+                if i != j:
+                    term *= (x - x_values[j]) / (x_values[i] - x_values[j])
+            total += term
+
+        return int(total) % self.prime
+
+    def combine_secret(self, shares:list[str], num_required: int) -> bytes:
+        if len(shares) < num_required:
+            raise ValueError(f"Got {len(shares)} shares. At least {num_required} shares required!")
+
+        points = self.__decode_shares(shares)
+        y = self.__lagrange_interpolation(0, points)
+        y_len = (y.bit_length() + 7) // 8
+
+        return y.to_bytes(y_len, "big")
