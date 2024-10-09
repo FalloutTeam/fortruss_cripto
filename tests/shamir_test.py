@@ -10,9 +10,24 @@ def shamir():
 def secret():
     return get_random_bytes(32)
 
+@pytest.fixture
+def shares(shamir, secret):
+    num_shares = 5
+    num_req = 3
+    shares = shamir.split_secret(secret, num_shares, num_req)
+    return shares
+
 def test_shamir_split(shamir, secret):
     num_shares = 5
-    shares = shamir.split_secret(secret, num_shares)
+    num_req = 3
+    shares = shamir.split_secret(secret, num_shares, num_req)
+    assert len(shares) == num_shares
+
+def test_shamir_combine(shamir, secret, shares):
+    num_req = 3
+    secret2 = shamir.combine_secret(list(zip(*shares))[1], num_req)
+    print("________________")
     print(secret.hex())
-    print(shares)
-    assert len(shares) == 5
+    print(secret2.hex())
+    print("________________")
+    assert secret == secret2
