@@ -1,25 +1,12 @@
 import random
-from functools import reduce
-from operator import mul
-import os
+import secrets
+import multiprocessing
 
 
-# Простое умножение с модулем
-def mod_inverse(a, p):
-    """Нахождение обратного по модулю с использованием расширенного алгоритма Евклида"""
-    g, x, y = extended_gcd(a, p)
-    return x % p
-
-
-def extended_gcd(a, b):
-    """Расширенный алгоритм Евклида"""
-    if a == 0:
-        return b, 0, 1
-    g, x1, y1 = extended_gcd(b % a, a)
-    x = y1 - (b // a) * x1
-    y = x1
-    return g, x, y
-
+class Shamir256:
+    def __init__(self, divisor: int = 2 ** 64, high_value: int = 2 ** 128):
+        self.divisor = divisor
+        self.high_value = high_value
 
 def eval_polynomial(coeffs, x, p):
     """Вычисление значения полинома в точке x с модулем p"""
