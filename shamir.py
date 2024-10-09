@@ -17,8 +17,11 @@ class Shamir256:
     def __generate_coefficients(self, threshold: int) -> list[int]:
         return [secrets.randbelow(self.high_value) for _ in range(threshold - 1)]
 
-def lagrange_interpolation(x, x_s, y_s, p):
-    """Интерполяция Лагранжа для восстановления секрета"""
+    def __evaluate_polynomial_horner_scheme(self, x: int, coefficients: list) -> int:
+        result = 0
+        for coeff in reversed(coefficients):
+            result = result * x + coeff
+        return result % self.divisor
 
     def _basis(j):
         terms = [(x - x_s[m]) * mod_inverse(x_s[j] - x_s[m], p) % p for m in range(len(x_s)) if m != j]
