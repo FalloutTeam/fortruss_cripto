@@ -32,7 +32,17 @@ class Shamir256:
         }
         return response
 
-    def split_secret(self, secret: bytes, num_shares: int) -> list[tuple[int, str]]:
+    @staticmethod
+    def __encode_shares(points: list[tuple[int, int]]) -> list[str]:
+        secret_shares = [json.dumps(point).encode().hex() for point in points]
+        return secret_shares
+
+    @staticmethod
+    def __decode_shares(shares: list[str]) -> list[tuple[int, int]]:
+        points = [json.loads(bytes.fromhex(share).decode()) for share in shares]
+        return points
+
+    def split_secret(self, secret: bytes, num_shares: int, num_required: int) -> list[tuple[int, str]]:
         if len(secret) != 32:
             raise ValueError(f"Unacceptable secret size ({len(secret)}). Expected 32 bytes")
         threshold = num_shares - 1
