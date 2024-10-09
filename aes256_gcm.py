@@ -1,7 +1,12 @@
 from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
 
 
 class Aes256GSM:
+    @staticmethod
+    def get_random_bytes32() -> bytes:
+        return get_random_bytes(32)
+
     @staticmethod
     def encrypt(key:bytes| bytearray | memoryview, data: bytes | bytearray | memoryview, nonce: bytes = None)\
             -> tuple[bytes, bytes| bytearray | memoryview, bytes]:
