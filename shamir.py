@@ -23,18 +23,16 @@ class Shamir256:
             result = result * x + coeff
         return result % self.divisor
 
-    def _basis(j):
-        terms = [(x - x_s[m]) * mod_inverse(x_s[j] - x_s[m], p) % p for m in range(len(x_s)) if m != j]
-        return reduce(mul, terms, 1)
+    def __count_sub_secret(self, secret: int, threshold: int, num_shares: int) -> list[tuple[int, int]]:
+        coeffs = [secret] + self.__generate_coefficients(threshold)
+        shares = list()
 
-    return sum(y_s[j] * _basis(j) for j in range(len(x_s))) % p
+        for _ in range(num_shares):
+            x = random.randint(1, self.high_value)
+            y = self.__evaluate_polynomial_horner_scheme(x, coeffs)
+            shares.append((x, y))
 
-
-def split_secret(secret, k, n, p):
-    """Разделение секрета с использованием схемы Шамира"""
-    coeffs = [secret] + [random.randint(0, p - 1) for _ in range(k - 1)]
-    shares = [(i, eval_polynomial(coeffs, i, p)) for i in range(1, n + 1)]
-    return shares
+        return shares
 
 
 def recover_secret(shares, p):
