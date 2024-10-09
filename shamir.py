@@ -45,15 +45,13 @@ class Shamir256:
     def split_secret(self, secret: bytes, num_shares: int, num_required: int) -> list[tuple[int, str]]:
         if len(secret) != 32:
             raise ValueError(f"Unacceptable secret size ({len(secret)}). Expected 32 bytes")
-        threshold = num_shares - 1
-        secret_shares = list()
-        coeffs = [int.from_bytes(secret, "big")] + self.__generate_coefficients(threshold)
-
+        coeffs = [int.from_bytes(secret, "big")] + self.__generate_coefficients(num_required - 1)
+        points = list()
         for i in range(1, num_shares + 1):
             x = random.randint(1, self.high_value)
             y = self.__evaluate_polynomial_horner_scheme(x, coeffs)
-            point = (x, y)
-            share = json.dumps(point).encode().hex()
-            secret_shares.append((i, share))
+            points.append((x, y))
+
+        secret_shares = list(enumerate(self.__encode_shares(points), start=1))
 
         return secret_shares
