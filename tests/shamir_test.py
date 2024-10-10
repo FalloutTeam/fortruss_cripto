@@ -25,9 +25,5 @@ def test_shamir_split(shamir, secret):
 
 def test_shamir_combine(shamir, secret, shares):
     num_req = 3
-    secret2 = shamir.combine_secret(list(zip(*shares))[1], num_req)
-    print("________________")
-    print(secret.hex())
-    print(secret2.hex())
-    print("________________")
-    assert secret == secret2
+    secret2 = shamir.combine_secret(shares, num_req)
+    assert secret2 == secret
