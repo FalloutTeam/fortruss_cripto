@@ -1,0 +1,640 @@
+openapi: 3.0.3
+info:
+    title: Fortruss API
+    version: 1.0.11
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: default
+    description: default operations 
+  - name: secrets
+    description: Operations about secrets
+  - name: roles
+    description: Users roles
+  - name: access
+    description: Assigning roles
+  - name: users
+    description: Users 
+  
+paths:
+  /registration:
+    post:
+      tags:
+        - default
+      summary: Register a new user
+      description: Register a new user with email and password
+      operationId: regUser
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: User's email
+                  example: example@yandex.ru
+                password:
+                  type: string
+                  description: User's password
+                  example: "123456!"
+              required:
+                - email
+                - password
+        required: true
+      responses:
+        '200':
+            description: OK
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            id:
+                                type: string
+        '400':
+            description: invalid input parameters
+        '409':
+            description: conflict
+
+  /login:
+    post:
+      tags:
+        - default
+      summary: Login to system
+      description: Login in account
+      operationId: logUser
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: User's email
+                  example: example@yandex.ru
+                password:
+                  type: string
+                  description: User's password
+                  example: "123456!"
+              required:
+                - email
+                - password
+        required: true
+      responses:
+        '200':
+            description: OK
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            id:
+                                type: string
+        '400':
+            description: invalid input parameters
+        '404':
+            description: user is not found
+        '409':
+            description: conflict
+
+  /secret:
+    post:
+      tags:
+        - secrets
+      summary: Create a secret.
+      description: Creates a new secret.
+      operationId: createSecret
+      requestBody:
+        description: Secret object that needs to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Secret'
+      responses:
+        '200':
+          description: OK
+          content:
+              application/json:
+                  schema:
+                      type: object
+                      properties:
+                          secret_id:
+                              type: string
+                              example: abc12345
+        '400':
+          description: Invalid input
+        '404':
+          description: Secret not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - write
+            
+  /secrets:
+      get:
+        tags:
+          - secrets
+        summary: Get all secrets.
+        description: Returns a list of all secrets.
+        operationId: getAllSecrets
+        responses:
+          '200':
+            description: List of secrets retrieved successfully
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SecretResponse'
+        security:
+          - api_key: []
+          - petstore_auth:
+              - read
+              
+  /secret/{secret_id}:
+    get:
+      tags:
+        - secrets
+      summary: Get a secret by ID.
+      description: Returns the secret by its ID.
+      operationId: getSecretById
+      parameters:
+        - name: secret_id
+          in: path
+          description: ID of the secret to return
+          required: true
+          schema:
+            type: string
+            example: abc12345
+      responses:
+        '200':
+          description: Secret retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretResponse'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Secret not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - read
+            
+    delete:
+      tags:
+        - secrets
+      summary: Deleting a secret by ID
+      description: delete a secret
+      operationId: deleteSecret
+      parameters:
+        - name: secret_id
+          in: path
+          description: Pet id to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Secret not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - delete
+            
+    put:
+      tags:
+        - secrets
+      summary: Update a secret.
+      description: Updates an existing secret. Requires the secret ID.
+      operationId: updateSecret
+      parameters:
+        - name: secret_id
+          in: path
+          required: true
+          description: The ID of the secret to be updated.
+          schema:
+            type: string
+      requestBody:
+        description: Secret object that needs to be updated
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Secret'
+      responses:
+        '200':
+          description: Secret updated successfully
+        '400':
+          description: Invalid input
+        '404':
+          description: Secret not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - write
+            
+  /role:
+    post:
+      tags:
+        - roles
+      summary: Create a new access role.
+      description: Creates a new access role with specified permissions.
+      operationId: createRole
+      requestBody:
+        description: Role object that needs to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewRole'
+      responses:
+        '200':
+          description: Role created successfully.
+          content:
+              application/json:
+                  schema:
+                      type: object
+                      properties:
+                          secret_id:
+                              type: string
+                              example: role1
+        '400':
+          description: Invalid input
+        '409':
+          description: Role with the same name already exists
+        '500':
+          description: Internal server error
+      security:
+        - api_key: []
+        - petstore_auth:
+            - write
+  
+  /roles:
+    get:
+      tags:
+        - roles
+      summary: Retrieve a list of access roles.
+      description: Returns a list of all available access roles with their permissions.
+      operationId: getRoles
+      responses:
+        '200':
+          description: A list of access roles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '401':
+          description: Unauthorized access
+        '500':
+          description: Internal server error
+      security:
+        - api_key: []
+        - petstore_auth:
+            - read
+  
+  /role/{role_id}:
+    get:
+      tags:
+        - roles
+      summary: Retrieve a specific access role.
+      description: Returns details of a specific access role identified by its ID.
+      operationId: getRoleById
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          description: ID of the role to retrieve.
+          schema:
+            type: string
+            example: "role1"
+      responses:
+        '200':
+          description: Role retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '404':
+          description: Role not found
+        '500':
+          description: Internal server error
+      security:
+        - api_key: []
+        - petstore_auth:
+            - read
+            
+    delete:
+      tags:
+        - roles
+      summary: Delete a specific access role.
+      description: Removes the access role identified by its ID.
+      operationId: deleteRoleById
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          description: ID of the role to delete.
+          schema:
+            type: string
+            example: "role3"
+      responses:
+        '204':
+          description: Role deleted successfully.
+        '404':
+          description: Role not found
+        '500':
+          description: Internal server error
+      security:
+        - api_key: []
+        - petstore_auth:
+            - delete
+            
+    put:
+      tags:
+        - roles
+      summary: Update a specific access role.
+      description: Updates the access role identified by its ID.
+      operationId: updateRoleById
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          description: ID of the role to update.
+          schema:
+            type: string
+            example: "role1"
+      requestBody:
+        description: Role object that needs to be updated.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewRole'
+      responses:
+        '200':
+          description: Role updated successfully.
+        '400':
+          description: Invalid input
+        '404':
+          description: Role not found
+        '500':
+          description: Internal server error
+      security:
+        - api_key: []
+        - petstore_auth:
+            - write
+          
+  /users/{email}/roles:
+    get:
+      tags:
+        - access
+      summary: Get roles for a user by email.
+      description: Retrieves a list of roles assigned to the user identified by their email.
+      operationId: getRolesByEmail
+      parameters:
+        - name: email
+          in: path
+          required: true
+          description: Email of the user to retrieve roles for.
+          schema:
+            type: string
+            example: "user@example.com"
+      responses:
+        '200':
+          description: Roles retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '404':
+          description: User not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - read
+          
+  /users/{email}/roles/{role_id}:
+    post:
+      tags:
+        - access 
+      summary: Assign a specific role to a user by email.
+      description: Assigns a specific role identified by its ID to the user identified by their email.
+      operationId: assignRoleToEmail
+      parameters:
+        - name: email
+          in: path
+          required: true
+          description: Email of the user to assign the role to.
+          schema:
+            type: string
+            example: "user@example.com"
+        - name: role_id
+          in: path
+          required: true
+          description: ID of the role to assign to the user.
+          schema:
+            type: string
+            example: "role1"
+      responses:
+        '201':
+          description: Role assigned successfully.
+        '400':
+          description: Invalid input
+        '404':
+          description: User or role not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - write
+            
+    delete:
+      tags:
+        - access
+      summary: Remove a role from a user by email.
+      description: Removes a specific role from the user identified by their email.
+      operationId: removeRoleByEmail
+      parameters:
+        - name: email
+          in: path
+          required: true
+          description: Email of the user to remove the role from.
+          schema:
+            type: string
+            example: "user@example.com"
+        - name: role_id
+          in: path
+          required: true
+          description: ID of the role to remove.
+          schema:
+            type: string
+            example: "role1"
+      responses:
+        '204':
+          description: Role removed successfully.
+        '404':
+          description: User or role not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - delete
+          
+  /secrets/{secret_id}/users:
+    get:
+      tags:
+        - users  # или другой выбранный вами тег
+      summary: Get all users and their roles for a specific secret.
+      description: Retrieves a list of users and their assigned roles for the specified secret.
+      operationId: getUsersBySecret
+      parameters:
+        - name: secret_id
+          in: path
+          required: true
+          description: ID of the secret to retrieve users for.
+          schema:
+            type: string
+            example: "secret123"
+      responses:
+        '200':
+          description: Users and their roles retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '404':
+          description: Secret not found
+      security:
+        - api_key: []
+        - petstore_auth:
+            - read
+            
+components:
+  schemas:
+  
+    Secret:
+      type: object
+      required:
+        - secret_name
+        - secret_value
+      properties:
+        secret_name:
+          type: string
+          example: db_password
+        secret_value:
+          type: string
+          example: SuperSecretPassword123
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    Metadata:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Пароль для базы данных
+        expiration:
+          type: string
+          format: date-time
+          example: 2024-12-31T23:59:59Z
+
+    SecretResponse:
+      type: object
+      properties:
+        secret_id:
+          type: string
+          description: Unique identifier of the secret.
+          example: abc12345
+        secret_name:
+          type: string
+          example: db_password
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the secret was created.
+          example: 2024-10-11T12:34:56Z
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+          
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "role1"
+        name:
+          type: string
+          example: "read_only"
+        description:
+          type: string
+          example: "Доступ только для чтения"
+        permissions:
+          type: array
+          items:
+            type: string
+          example: 
+            - "read"
+            - "write"
+            - "delete"
+
+    NewRole:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "admin_access"
+        description:
+          type: string
+          example: "Полный доступ администратора"
+        permissions:
+          type: array
+          items:
+            type: string
+          example: 
+            - "read"
+            - "write"
+            - "delete"
+            
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+          example: "user@example.com"
+        roles:
+          type: array
+          items:
+            type: string
+          example:
+            - "Admin"
+            - "User"
+            
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            write: write or modifine
+            read: read 
+            delete: delete
+            
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
